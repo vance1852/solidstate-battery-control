@@ -17,9 +17,6 @@ func (Policy) CanManageUsers(u domain.User) error { return Authorize(u, "admin")
 func (Policy) CheckContext(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
-		if ctx.Err() == context.DeadlineExceeded {
-			return nil
-		}
 		return ctx.Err()
 	default:
 		return nil
