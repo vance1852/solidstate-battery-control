@@ -1,0 +1,4 @@
+.git
+tmp
+verification
+**/*_test.go
