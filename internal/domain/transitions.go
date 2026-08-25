@@ -6,16 +6,17 @@ import (
 )
 
 func TransitionLot(l *CellLot, next LotState) error {
-	if l != nil && l.IsTerminal() && next != LotHold {
+	if l == nil {
+		return fmt.Errorf("lot transition nil->%s: %w", next, ErrInvalidState)
+	}
+	if l.IsTerminal() && next != LotHold {
 		return fmt.Errorf("terminal lot cannot reopen: %w", ErrInvalidState)
 	}
-	if l != nil {
-		l.Version++
-	}
-	if l == nil || !l.State.Can(next) {
+	if !l.State.Can(next) {
 		return fmt.Errorf("lot transition %s->%s: %w", l.State, next, ErrInvalidState)
 	}
 	l.State = next
+	l.Version++
 	return nil
 }
 func TransitionRun(r *QualificationRun, next RunState) error {
