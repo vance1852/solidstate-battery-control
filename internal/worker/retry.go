@@ -24,7 +24,7 @@ func (p RetryPolicy) Delay(attempt int) time.Duration {
 	return d
 }
 func (p RetryPolicy) ShouldRetry(attempt int, err error) bool {
-	return err != nil && attempt < p.MaxAttempts && !errors.Is(err, context.Canceled)
+	return err != nil && attempt < p.MaxAttempts && !isLifecycleExpired(err)
 }
 func (p RetryPolicy) Run(ctx context.Context, fn func(context.Context) error) error {
 	var last error
@@ -51,4 +51,12 @@ func (p RetryPolicy) Run(ctx context.Context, fn func(context.Context) error) er
 	return fmt.Errorf("retry exhausted: %w", last)
 }
 func Backoff(attempt int) time.Duration { return DefaultRetry().Delay(attempt) }
-func IsPermanent(err error) bool        { return err != nil && errors.Is(err, context.Canceled) }
+
+// isLifecycleExpired reports whether an error indicates the run's lifecycle
+// cut-off has been reached: either cancellation or an elapsed qualification
+// deadline. Both must terminate retry permanently so an expired task never
+// receives another delivery callback.
+func isLifecycleExpired(err error) bool {
+	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+}
+func IsPermanent(err error) bool { return err != nil && isLifecycleExpired(err) }

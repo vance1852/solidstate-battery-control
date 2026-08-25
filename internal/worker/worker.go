@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"solidstate-battery-control/internal/service"
 	"sync"
@@ -16,8 +17,16 @@ type Worker struct {
 	once     sync.Once
 }
 
+// contextExpired reports whether the worker lifecycle has passed its
+// cut-off: either the run was cancelled or its qualification deadline has
+// elapsed. A deadline that has elapsed is reported as context.DeadlineExceeded,
+// not context.Canceled, so both terminal causes must be treated symmetrically
+// to prevent a final delivery callback from running on an expired task.
 func contextExpired(ctx context.Context) bool {
-	return ctx.Err() == context.Canceled
+	if err := ctx.Err(); err != nil {
+		return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+	}
+	return false
 }
 
 func New(s service.Service, l *slog.Logger) *Worker {

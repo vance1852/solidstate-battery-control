@@ -36,3 +36,18 @@ func TestRetryContext(t *testing.T) {
 		t.Fatal("extra attempt")
 	}
 }
+func TestContextExpiredSymmetric(t *testing.T) {
+	cancelCtx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if !contextExpired(cancelCtx) {
+		t.Fatal("cancelled context not reported expired")
+	}
+	deadlineCtx, deadlineCancel := context.WithDeadline(context.Background(), time.Unix(1, 0))
+	deadlineCancel()
+	if !contextExpired(deadlineCtx) {
+		t.Fatal("elapsed deadline not reported expired")
+	}
+	if contextExpired(context.Background()) {
+		t.Fatal("fresh context reported expired")
+	}
+}
