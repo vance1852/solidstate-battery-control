@@ -22,13 +22,7 @@ func TransitionRun(r *QualificationRun, next RunState) error {
 	return nil
 }
 func TransitionHold(h *QualityHold, next HoldState, user string) error {
-	if h == nil {
-		return ErrInvalidState
-	}
-	if next != HoldCleared {
-		return ErrInvalidState
-	}
-	if h.State != HoldOpen && h.State != HoldCleared {
+	if h == nil || !h.State.Can(next) {
 		return ErrInvalidState
 	}
 	h.State = next
